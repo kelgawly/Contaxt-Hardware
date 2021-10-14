@@ -1,0 +1,25 @@
+Hookup Instructions:
+
+GPS:
+- gps tx pin to pin 11
+- gps rx pin to pin 10
+- gps vcc to arduino 5V
+- gps GND to arduino GND
+* Diagram can be found under Google Drive Contaxt2021-22/SupportingFiles/GPSWiringDiagram.png
+
+Force square:
+-one pin to 5v
+-the other pin to A0
+- 3.3 k resistor to A0
+- 3.3 k resistor to GND
+* Diagram can be found under Google Drive Contaxt2021-22/SupportingFiles/ForceSensorHookup.png
+
+Accerlometer:
+
+- GND to GND
+- ADXL VCC to Arduino 3V3
+- ADXL CS to Arduino 3V3
+- ADXL SDO to GND
+- ADXL SDA to Arduino A4
+- ADXL SCL to Arduino A5
+* Diagram can be found under Google Drive Contaxt2021-22/SupportingFiles/ADXL345HookUp.png

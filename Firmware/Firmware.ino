@@ -4,7 +4,7 @@
 #include "ADXL345.h"
 #include "I2Cdev.h"
 #include "FSR.h"
-
+#include <SoftwareSerial.h>
 
 // Pin Definitions
 #define FSRSQUARE_PIN_1	A0
@@ -18,6 +18,16 @@ int16_t adxlAx, adxlAy, adxlAz;
 // object initialization
 ADXL345 adxl;
 FSR fsrSquare(FSRSQUARE_PIN_1);
+
+// Choose two Arduino pins to use for software serial
+int RXPin = 10; //TODO: make sure these pins are correct
+int TXPin = 11;
+
+//Default baud of NEO-6M is 9600
+int GPSBaud = 9600;
+
+// Create a software serial port called "gpsSerial"
+SoftwareSerial gpsSerial(RXPin, TXPin);
 
 
 // define vars for testing menu
@@ -68,6 +78,18 @@ void loop()
     else if(menuOption == '3')
     {
     // Disclaimer: The Ublox NEO-6M GPS Module is in testing and/or doesn't have code, therefore it may be buggy. Please be kind and report any bugs you may find.
+    // for more information visit: https://lastminuteengineers.com/neo6m-gps-arduino-tutorial/
+    //print out 10 readings from the GPS module
+    // returns NMEA sentences which need to be parsed, visit the site above and section "Parsing NMEA Sentences" for more information
+    //TinyGPS++ seems to be a good library for doing this
+    int counter = 0;
+      while (gpsSerial.available() > 0){
+        Serial.write(gpsSerial.read());
+        counter ++;
+        if (counter >= 10){
+          break;
+        }
+      }
     }
     
     if (millis() - time0 > timeout)
