@@ -20,6 +20,6 @@ Accerlometer:
 - ADXL VCC to Arduino 3V3
 - ADXL CS to Arduino 3V3
 - ADXL SDO to GND
-- ADXL SDA to Arduino A4
-- ADXL SCL to Arduino A5
+- ADXL SDA to Arduino A4 (or whatever I2C interface the board uses)
+- ADXL SCL to Arduino A5 (or whatever I2C interface the board uses)
 * Diagram can be found under Google Drive Contaxt2021-22/SupportingFiles/ADXL345HookUp.png
