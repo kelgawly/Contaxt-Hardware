@@ -1,8 +1,7 @@
 // Include Libraries
-#include "Arduino.h"
-#include "ADXL345.h"
-#include "I2Cdev.h"
-#include "FSR.h"
+
+#include <SparkFun_ADXL345.h>   
+
 #include <SoftwareSerial.h>
 #include <TinyGPS++.h>
 
@@ -14,12 +13,12 @@
 
 
 // Global variables and defines
-int16_t adxlAx, adxlAy, adxlAz;
+int adxlAx, adxlAy, adxlAz;
 TinyGPSPlus gps;
 
 // object initialization
 ADXL345 adxl;
-FSR fsrSquare(FSRSQUARE_PIN_1);
+//FSR fsrSquare(FSRSQUARE_PIN_1);
 
 
 //Default baud of NEO-6M is 9600
@@ -43,7 +42,7 @@ void setup()
     while (!Serial) ; // wait for serial port to connect. Needed for native USB
     Serial.println("start");
     
-    adxl.init();
+    ADXL345 adxl = ADXL345();
     menuOption = menu();
     
 }
@@ -56,7 +55,14 @@ void loop()
     if(menuOption == '1') {
     // SparkFun ADXL345 - Triple Axis Accelerometer Breakout - Test Code
     // read raw accel measurements from device
-    adxl.getAcceleration(&adxlAx, &adxlAy, &adxlAz);
+    // examples of other things to adjust on ADXL: https://github.com/sparkfun/SparkFun_ADXL345_Arduino_Library/blob/master/examples/SparkFun_ADXL345_Example/SparkFun_ADXL345_Example.ino
+    adxl.powerOn();                     // Power on the ADXL345
+
+    adxl.setRangeSetting(16);           // Give the range settings
+                                      // Accepted values are 2g, 4g, 8g or 16g
+                                      // Higher Values = Wider Measurement Range
+                                      // Lower Values = Greater Sensitivity
+    adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
     // display tab-separated accel x/y/z values
     Serial.print(F("ADXL345 accel-\t")); 
     Serial.print(adxlAx); Serial.print(F("\t"));
@@ -70,7 +76,7 @@ void loop()
     // For more information see Sparkfun website - www.sparkfun.com/products/9375
     // Note, the default Vcc and external resistor values for FSR calculations are 5V ang 3300Okm, if you are not 
     //       using these default valuse in your circuit go to FSR.cpp and change default values in FSR constructor
-    float fsrSquareForce = fsrSquare.getForce();
+    float fsrSquareForce = getForce();
     Serial.print(F("Force: ")); Serial.print(fsrSquareForce); Serial.println(F(" [g]"));
 
     }
@@ -201,6 +207,30 @@ void displayInfo()
   Serial.println();
   Serial.println();
   delay(1000);
+}
+
+
+//helper for FSR square
+
+float getResistance(){
+  int res = 3300; //using 3.3k resistor
+  int Vcc = 5; //operates at 5V
+  float senVoltage = analogRead(FSRSQUARE_PIN_1) * Vcc / 1023;
+  return res * (Vcc / senVoltage - 1);
+}
+
+/**
+ * Converte resistance to force using curve from data sheet [in grams/cm^2].<BR>
+ * Return value ranges 100g/cm^2 to 10Kg/cm^2.
+ */
+float getForce()
+{
+  float resistance = getResistance();
+  //calculate force using curve broken into two parts of different slope
+  if (resistance <= 600)
+    return (1.0 / resistance - 0.00075) / 0.00000032639;
+  else
+    return (1.0 / resistance)  / 0.000000642857;
 }
 
 /*******************************************************
