@@ -23,3 +23,9 @@ Accerlometer:
 - ADXL SDA to Arduino A4 (or whatever I2C interface the board uses)
 - ADXL SCL to Arduino A5 (or whatever I2C interface the board uses)
 * Diagram can be found under Google Drive Contaxt2021-22/SupportingFiles/ADXL345HookUp.png
+
+
+NodeMCU hookup:
+I2C:
+- SDA => D2
+- SCL => D1

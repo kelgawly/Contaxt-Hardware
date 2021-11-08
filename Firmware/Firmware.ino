@@ -7,8 +7,8 @@
 
 // Pin Definitions
 #define FSRSQUARE_PIN_1	A0
-#define GPS_PIN_TX	11
-#define GPS_PIN_RX	10
+#define GPS_PIN_TX	12
+#define GPS_PIN_RX	14
 
 
 
@@ -25,7 +25,7 @@ ADXL345 adxl;
 int GPSBaud = 9600;
 
 // Create a software serial port called "gpsSerial"
-SoftwareSerial gpsSerial(GPS_PIN_RX, GPS_PIN_TX);
+SoftwareSerial gpsSerial(D6, D5); //RX,TX
 
 
 // define vars for testing menu
@@ -38,7 +38,9 @@ void setup()
 {
     // Setup Serial which is useful for debugging
     // Use the Serial Monitor to view printed messages
+    
     Serial.begin(9600);
+    
     while (!Serial) ; // wait for serial port to connect. Needed for native USB
     Serial.println("start");
     
@@ -87,25 +89,25 @@ void loop()
     //print out 10 readings from the GPS module
     // returns NMEA sentences which need to be parsed, visit the site above and section "Parsing NMEA Sentences" for more information
     //TinyGPS++ seems to be a good library for doing this
-    int counter = 0;
+    
+    Serial.println(gpsSerial.available());
     while (gpsSerial.available() > 0){
     if (gps.encode(gpsSerial.read())){
-      counter ++;
-      displayInfo();
-      if(counter >= 10){
-        break;
-      }
+      
+      displayGPSInfo();
+      
+    }
     }
     }
 
     // If 5000 milliseconds pass and there are no characters coming in
     // over the software serial port, show a "No GPS detected" error
-    if (millis() > 5000 && gps.charsProcessed() < 10)
-    {
-      Serial.println("No GPS detected");
-      while(true);
-    }
-    }
+//    if (millis() > 5000 && gps.charsProcessed() < 10)
+//    {
+//      Serial.println("No GPS detected");
+//      while(true);
+//    }
+    
     
     if (millis() - time0 > timeout)
     {
@@ -154,7 +156,7 @@ char menu()
 
 
 //display interface for GPS readings
-void displayInfo()
+void displayGPSInfo()
 {
   if (gps.location.isValid())
   {
