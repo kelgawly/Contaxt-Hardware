@@ -5,3 +5,4 @@ CREATE TABLE sensorData(
     forceReading FLOAT,
     creationDateTime DATETIME
 );
+
