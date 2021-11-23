@@ -29,7 +29,7 @@ def close_connection(exception):
 
 @app.route("/")
 def test():
-    return "yerd"
+    return "contaxt server up and running woohoo"
 
 @app.route("/postForceData",methods=["POST"])
 def post_force_data():
