@@ -25,6 +25,8 @@ unsigned long timerDelay = 5000;
 #define GPS_PIN_TX	12
 #define GPS_PIN_RX	14
 
+//operating at 3.3 V
+double vcc = 3.3;
 
 
 // Global variables and defines
@@ -48,7 +50,7 @@ const int timeout = 20000;       //define timeout of 10 sec
 char menuOption = 0;
 long time0;
 
-void postForceData(float sensorReading) {
+void postForceData(double sensorReading) {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
     HTTPClient http;
@@ -126,8 +128,8 @@ void loop()
     // For more information see Sparkfun website - www.sparkfun.com/products/9375
     // Note, the default Vcc and external resistor values for FSR calculations are 5V ang 3300Okm, if you are not
     //       using these default valuse in your circuit go to FSR.cpp and change default values in FSR constructor
-    float fsrSquareForce = getForce();
-    Serial.print(F("Force: ")); Serial.print(getForce()); Serial.println(F(" V"));
+    double fsrSquareForce = getForceNew(true);
+    Serial.print(F("Force: ")); Serial.print(fsrSquareForce); Serial.println(F(" lbs"));
 
   }
   else if (menuOption == '3')
@@ -275,28 +277,56 @@ void displayGPSInfo()
 
 //helper for FSR square
 
-float getResistance() {
-  int res = 10000; //using 3.3k resistor
-  int Vcc = 3.3; //operates at 5V
+double getResistance() {
+  double res = 10000; //using 10k resistor
+  double Vcc = 3.3; //operates at 3.3V
   
-  float senVoltage = analogRead(FSRSQUARE_PIN_1) * Vcc / 1023;
+  double senVoltage = analogRead(FSRSQUARE_PIN_1) * Vcc / 1023;
   return res * (Vcc / senVoltage - 1);
 }
 
 /**
-   Converte resistance to force using curve from data sheet [in grams/cm^2].<BR>
-   Return value ranges 100g/cm^2 to 10Kg/cm^2.
+   Converte resistance to force using curve from data sheet [in grams]
 */
-float getForce()
-{
-  float resistance = getResistance();
+double analogToVout(int analogReadValue){
   
+  return analogReadValue * vcc / 1023; //convert analog read value parameter to volts, can also use map function
+}
+
+double vOutToResistance(double vOut){
+  int refResistorVal = 10000; //we are currently using a 10k resistor
+  return (refResistorVal * vcc / vOut) - 1;
+}
+
+double resistanceToForce(double resistanceFSR){
+  double kOhmResistance = resistanceFSR / 1000; //equation works in kohms
+  return 1285.197 * pow(kOhmResistance, -1.41);
+}
+
+
+double getForceNew(bool inPounds){
+  int analogReadVal = analogRead(FSRSQUARE_PIN_1); // read the FSR pin
+  double vOut = analogToVout(analogReadVal); //convert analog read to voltage
+  double fsrResistance = vOutToResistance(vOut); //convert read voltage to FSR resistance
+  double fsrForce = resistanceToForce(fsrResistance); //get force applied to sensor in grams
+  if (inPounds){
+    fsrForce = gTolb(fsrForce);
+  }
+  return fsrForce;
+  
+}
+double getForce()
+{
+  double resistance = getResistance();
   
   //calculate force using curve broken into two parts of different slope
   if (resistance <= 600)
-    return (1.0 / resistance - 0.00075) / 0.00000032639;
+    return (1.0 / resistance - 0.00075) / 0.00000032639 / pow(3.81,2);
   else
-    return (1.0 / resistance)  / 0.000000642857;
+    return (1.0 / resistance)  / 0.000000642857/pow(3.81,2);
+}
+double gTolb(double g){
+  return g * 0.00220462; 
 }
 
 /*******************************************************
