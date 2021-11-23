@@ -13,8 +13,8 @@
 const char* ssid = "REPLACE_WITH_YOUR_SSID";
 const char* password = "REPLACE_WITH_YOUR_PASSWORD";
 
-//Your Domain name with URL path or IP address with path
-const char* serverName = "http://0.0.0.0:5000/";
+//Domain name with URL path or IP address with path
+const char* serverName = "http://18.191.219.252:8080/";
 
 unsigned long lastTime = 0;
 //how long we wait before timeout
