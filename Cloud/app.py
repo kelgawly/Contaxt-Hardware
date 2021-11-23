@@ -44,4 +44,4 @@ def post_force_data():
         return jsonify(success = True)
 
 if __name__ == "__main__":
-    pass
+    init_db()
