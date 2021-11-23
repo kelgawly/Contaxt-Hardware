@@ -1,7 +1,7 @@
 from flask import Flask, request,g,jsonify
 import sqlite3
 import datetime 
-
+from api_keys_config import require_appkey
 app = Flask(__name__)
 
 DATABASE = 'database.db'
@@ -31,7 +31,9 @@ def close_connection(exception):
 def test():
     return "contaxt server up and running woohoo"
 
+
 @app.route("/postForceData",methods=["POST"])
+@require_appkey
 def post_force_data():
     if request.method == "POST":
         db = get_db()
