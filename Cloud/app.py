@@ -32,7 +32,7 @@ def test():
     return "contaxt server up and running woohoo"
 
 
-@app.route("/postForceData",methods=["POST"])
+@app.route("/postForceData",methods=["GET","POST"])
 @require_appkey
 def post_force_data():
     if request.method == "POST":
@@ -44,6 +44,10 @@ def post_force_data():
         cur.execute(sql,insert_vals)
         db.commit()
         return jsonify(success = True)
+    else:
+        return "Where data should be posted"
 
 if __name__ == "__main__":
-    init_db()
+    pass
+    #app.run(host="0.0.0.0", port= 8080)
+    
