@@ -22,9 +22,8 @@ unsigned long timerDelay = 5000;
 
 // Pin Definitions
 #define FSRSQUARE_PIN_1	A0
-#define GPS_PIN_TX	12
-#define GPS_PIN_RX	14
-
+#define GPS_PIN_TX 15
+#define GPS_PIN_RX 13
 //operating at 3.3 V
 double vcc = 3.3;
 
@@ -42,11 +41,11 @@ ADXL345 adxl;
 int GPSBaud = 9600;
 
 // Create a software serial port called "gpsSerial"
-SoftwareSerial gpsSerial(D6, D5); //RX,TX
+SoftwareSerial gpsSerial(GPS_PIN_RX, GPS_PIN_TX); //RX, TX
 
 
 // define vars for testing menu
-const int timeout = 20000;       //define timeout of 10 sec
+const int timeout = 2000000;       //define timeout of 10 sec
 char menuOption = 0;
 long time0;
 
@@ -82,17 +81,25 @@ void setup()
   // Use the Serial Monitor to view printed messages
 
   Serial.begin(9600);
+  //GPIO 15 / D8 IS TX
+  //GPIO 13 / D7 IS RX
+  delay(500);
+  Serial.swap();
+  
 
-  while (!Serial) ; // wait for serial port to connect. Needed for native USB
-  Serial.println("start");
+  Serial1.begin(9600);
+
+  Serial1.printf("hey");
 
   //connect to wifi
   //configureWifi();
+  
 
-
-
-  ADXL345 adxl = ADXL345();
-  menuOption = menu();
+//  gpsSerial.begin(9600);
+//
+//
+//  ADXL345 adxl = ADXL345();
+//  menuOption = menu();
 
 
 
@@ -102,7 +109,7 @@ void setup()
 // Main logic of your circuit. It defines the interaction between the components you selected. After setup, it runs over and over again, in an eternal loop.
 void loop()
 {
-
+  testGPS();
 
   if (menuOption == '1') {
     // SparkFun ADXL345 - Triple Axis Accelerometer Breakout - Test Code
@@ -139,14 +146,15 @@ void loop()
     //print out 10 readings from the GPS module
     // returns NMEA sentences which need to be parsed, visit the site above and section "Parsing NMEA Sentences" for more information
     //TinyGPS++ seems to be a good library for doing this
-
-    Serial.println(gpsSerial.available());
+    
+    
     while (gpsSerial.available() > 0) {
-      if (gps.encode(gpsSerial.read())) {
-
-        displayGPSInfo();
-
-      }
+      Serial.write(gpsSerial.read());
+//      if (gps.encode(gpsSerial.read())) {
+//  
+//        displayGPSInfo();
+//
+//      }
     }
   }
 
@@ -204,6 +212,17 @@ char menu()
   }
 }
 
+
+void testGPS(){
+  while (Serial.available() > 0) {
+      if (gps.encode(Serial.read())) {
+        
+        displayGPSInfo();
+
+      }
+    }
+}
+
 //configuration for the WiFi
 void configureWifi() {
   WiFi.begin(ssid, password);
@@ -223,55 +242,55 @@ void displayGPSInfo()
 {
   if (gps.location.isValid())
   {
-    Serial.print("Latitude: ");
-    Serial.println(gps.location.lat(), 6);
-    Serial.print("Longitude: ");
-    Serial.println(gps.location.lng(), 6);
-    Serial.print("Altitude: ");
-    Serial.println(gps.altitude.meters());
+    Serial1.print("Latitude: ");
+    Serial1.println(gps.location.lat(), 6);
+    Serial1.print("Longitude: ");
+    Serial1.println(gps.location.lng(), 6);
+    Serial1.print("Altitude: ");
+    Serial1.println(gps.altitude.meters());
   }
   else
   {
-    Serial.println("Location: Not Available");
+    Serial1.println("Location: Not Available");
   }
 
-  Serial.print("Date: ");
+  Serial1.print("Date: ");
   if (gps.date.isValid())
   {
-    Serial.print(gps.date.month());
-    Serial.print("/");
-    Serial.print(gps.date.day());
-    Serial.print("/");
-    Serial.println(gps.date.year());
+    Serial1.print(gps.date.month());
+    Serial1.print("/");
+    Serial1.print(gps.date.day());
+    Serial1.print("/");
+    Serial1.println(gps.date.year());
   }
   else
   {
-    Serial.println("Not Available");
+    Serial1.println("Not Available");
   }
 
-  Serial.print("Time: ");
+  Serial1.print("Time: ");
   if (gps.time.isValid())
   {
-    if (gps.time.hour() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.hour());
-    Serial.print(":");
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(":");
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.second());
-    Serial.print(".");
-    if (gps.time.centisecond() < 10) Serial.print(F("0"));
-    Serial.println(gps.time.centisecond());
+    if (gps.time.hour() < 10) Serial1.print(F("0"));
+    Serial1.print(gps.time.hour());
+    Serial1.print(":");
+    if (gps.time.minute() < 10) Serial1.print(F("0"));
+    Serial1.print(gps.time.minute());
+    Serial1.print(":");
+    if (gps.time.second() < 10) Serial1.print(F("0"));
+    Serial1.print(gps.time.second());
+    Serial1.print(".");
+    if (gps.time.centisecond() < 10) Serial1.print(F("0"));
+    Serial1.println(gps.time.centisecond());
   }
   else
   {
-    Serial.println("Not Available");
+    Serial1.println("Not Available");
   }
 
-  Serial.println();
-  Serial.println();
-  delay(1000);
+  Serial1.println();
+  Serial1.println();
+  
 }
 
 

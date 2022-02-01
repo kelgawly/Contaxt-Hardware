@@ -29,3 +29,7 @@ NodeMCU hookup:
 I2C:
 - SDA => D2
 - SCL => D1
+
+Wire connected to TX is first number in software serial
+RX -> D6 (GPIO 12)
+TX -> D5 (GPIO 14)
