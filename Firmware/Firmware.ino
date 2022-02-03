@@ -1,13 +1,11 @@
 // Include Libraries
 
 #include <SparkFun_ADXL345.h>
-
-#include <SoftwareSerial.h>
 #include <TinyGPS++.h>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
+//#include <WiFiClient.h>
 
 //configuration details for WiFi
 const char* ssid = "REPLACE_WITH_YOUR_SSID";
@@ -22,27 +20,18 @@ unsigned long timerDelay = 5000;
 
 // Pin Definitions
 #define FSRSQUARE_PIN_1	A0
-#define GPS_PIN_TX 15
-#define GPS_PIN_RX 13
+
 //operating at 3.3 V
 double vcc = 3.3;
 
 
 // Global variables and defines
 int adxlAx, adxlAy, adxlAz;
-TinyGPSPlus gps;
+
 
 // object initialization
 ADXL345 adxl;
-//FSR fsrSquare(FSRSQUARE_PIN_1);
-
-
-//Default baud of NEO-6M is 9600
-int GPSBaud = 9600;
-
-// Create a software serial port called "gpsSerial"
-SoftwareSerial gpsSerial(GPS_PIN_RX, GPS_PIN_TX); //RX, TX
-
+TinyGPSPlus gps;
 
 // define vars for testing menu
 const int timeout = 2000000;       //define timeout of 10 sec
@@ -169,15 +158,6 @@ void oldMenuTesting(){
     // returns NMEA sentences which need to be parsed, visit the site above and section "Parsing NMEA Sentences" for more information
     //TinyGPS++ seems to be a good library for doing this
     
-    
-    while (gpsSerial.available() > 0) {
-      Serial.write(gpsSerial.read());
-//      if (gps.encode(gpsSerial.read())) {
-//  
-//        displayGPSInfo();
-//
-//      }
-    }
   }
 
 
