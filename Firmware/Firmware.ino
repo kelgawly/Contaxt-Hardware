@@ -77,28 +77,25 @@ void postForceData(double sensorReading) {
 // Setup the essentials for your circuit to work. It runs first every time your circuit is powered with electricity.
 void setup()
 {
-  // Setup Serial which is useful for debugging
-  // Use the Serial Monitor to view printed messages
-
+  //used to transmit data from gps to board
   Serial.begin(9600);
+  delay(500);
   //GPIO 15 / D8 IS TX
   //GPIO 13 / D7 IS RX
-  delay(500);
   Serial.swap();
   
-
+  //used for serial monitor
   Serial1.begin(9600);
 
-  Serial1.printf("hey");
-
   //connect to wifi
-  //configureWifi();
-  
+  configureWifi();
 
-//  gpsSerial.begin(9600);
-//
-//
-//  ADXL345 adxl = ADXL345();
+
+  //ADXL345 additional info ->  https://github.com/sparkfun/SparkFun_ADXL345_Arduino_Library/blob/master/examples/SparkFun_ADXL345_Example/SparkFun_ADXL345_Example.ino
+  //create accelerometer object
+   ADXL345 adxl = ADXL345();
+   adxl.powerOn();
+   adxl.setRangeSetting(16); 
 //  menuOption = menu();
 
 
@@ -109,12 +106,37 @@ void setup()
 // Main logic of your circuit. It defines the interaction between the components you selected. After setup, it runs over and over again, in an eternal loop.
 void loop()
 {
-  testGPS();
+  
+  printValsToSerial();
 
-  if (menuOption == '1') {
-    // SparkFun ADXL345 - Triple Axis Accelerometer Breakout - Test Code
-    // read raw accel measurements from device
-    // examples of other things to adjust on ADXL: https://github.com/sparkfun/SparkFun_ADXL345_Arduino_Library/blob/master/examples/SparkFun_ADXL345_Example/SparkFun_ADXL345_Example.ino
+}
+
+
+void printValsToSerial(){
+  //print GPS values
+  printGPS();
+
+  //print force square value
+  double fsrSquareForce = getForceNew(true);
+  Serial1.print(F("Force: ")); Serial1.print(fsrSquareForce); Serial1.println(F(" lbs"));
+
+  //print accelerometer values
+  adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
+  // display tab-separated accel x/y/z values
+  Serial1.print(F("ADXL345 accel-\t"));
+  Serial1.print(adxlAx); Serial1.print(F("\t"));
+  Serial1.print(adxlAy); Serial1.print(F("\t"));
+  Serial1.println(adxlAz);
+}
+
+
+
+// Menu function for selecting the components to be tested
+// Follow serial monitor for instrcutions
+
+void oldMenuTesting(){
+    if (menuOption == '1') {
+    
     adxl.powerOn();                     // Power on the ADXL345
 
     adxl.setRangeSetting(16);           // Give the range settings
@@ -158,13 +180,6 @@ void loop()
     }
   }
 
-  // If 5000 milliseconds pass and there are no characters coming in
-  // over the software serial port, show a "No GPS detected" error
-  //    if (millis() > 5000 && gps.charsProcessed() < 10)
-  //    {
-  //      Serial.println("No GPS detected");
-  //      while(true);
-  //    }
 
 
   if (millis() - time0 > timeout)
@@ -175,9 +190,6 @@ void loop()
 }
 
 
-
-// Menu function for selecting the components to be tested
-// Follow serial monitor for instrcutions
 char menu()
 {
 
@@ -213,11 +225,12 @@ char menu()
 }
 
 
-void testGPS(){
+void printGPS(){
   while (Serial.available() > 0) {
       if (gps.encode(Serial.read())) {
         
         displayGPSInfo();
+        
 
       }
     }
@@ -290,6 +303,7 @@ void displayGPSInfo()
 
   Serial1.println();
   Serial1.println();
+  
   
 }
 
