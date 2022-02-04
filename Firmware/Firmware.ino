@@ -12,6 +12,9 @@
 const char* ssid = "NETGEAR56";
 const char* password = "fancypotato115";
 
+const String firebaseAPIKey = "AIzaSyD3-yBGhRrFQZhDM-1VE3vou5nDvO83Crw";
+const String firebaseID = "contaxt-bc929";
+
 const String apiKey = "dev";
 
 //Domain name with URL path or IP address with path
