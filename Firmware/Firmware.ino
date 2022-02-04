@@ -8,8 +8,8 @@
 //#include <WiFiClient.h>
 
 //configuration details for WiFi
-const char* ssid = "REPLACE_WITH_YOUR_SSID";
-const char* password = "REPLACE_WITH_YOUR_PASSWORD";
+const char* ssid = "NETGEAR56";
+const char* password = "fancypotato115";
 
 //Domain name with URL path or IP address with path
 const char* serverName = "http://18.191.219.252:8080/";
@@ -22,7 +22,7 @@ unsigned long timerDelay = 5000;
 #define FSRSQUARE_PIN_1	A0
 
 //operating at 3.3 V
-double vcc = 3.3;
+const double vcc = 3.3;
 
 
 // Global variables and defines
@@ -38,7 +38,7 @@ const int timeout = 2000000;       //define timeout of 10 sec
 char menuOption = 0;
 long time0;
 
-void postForceData(double sensorReading) {
+void postForceData(double forceReading, int gpsData[3]) {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
     HTTPClient http;
@@ -50,14 +50,14 @@ void postForceData(double sensorReading) {
     // Specify content-type header
     http.addHeader("Content-Type", "application/json");
     // Data to send with HTTP POST
-    int httpResponseCode = http.POST("{\"api_key\":\"dev\",\force_data\":\"" + String(sensorReading) + "\"}");
+    int httpResponseCode = http.POST("{\"api_key\":\"dev\",\force_data\":\"" + String(forceReading) + "\"}");
 
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
 
     // Free resources
     http.end();
-  }else{
+  } else {
     Serial.println("WiFi has been disconnected");
   }
 
@@ -72,9 +72,13 @@ void setup()
   //GPIO 15 / D8 IS TX
   //GPIO 13 / D7 IS RX
   Serial.swap();
-  
+
   //used for serial monitor
   Serial1.begin(9600);
+
+  //  Serial1.println();
+  //  Serial1.print("MAC: ");
+  //  Serial1.println(WiFi.macAddress());
 
   //connect to wifi
   configureWifi();
@@ -82,10 +86,10 @@ void setup()
 
   //ADXL345 additional info ->  https://github.com/sparkfun/SparkFun_ADXL345_Arduino_Library/blob/master/examples/SparkFun_ADXL345_Example/SparkFun_ADXL345_Example.ino
   //create accelerometer object
-   ADXL345 adxl = ADXL345();
-   adxl.powerOn();
-   adxl.setRangeSetting(16); 
-//  menuOption = menu();
+  ADXL345 adxl = ADXL345();
+  adxl.powerOn();
+  adxl.setRangeSetting(16);
+  //  menuOption = menu();
 
 
 
@@ -95,13 +99,17 @@ void setup()
 // Main logic of your circuit. It defines the interaction between the components you selected. After setup, it runs over and over again, in an eternal loop.
 void loop()
 {
+  postData();
   
-  printValsToSerial();
 
 }
 
+void postData(){
+  Serial1.println(getGPSData()[0]);
+}
 
-void printValsToSerial(){
+
+void printValsToSerial() {
   //print GPS values
   printGPS();
 
@@ -120,117 +128,70 @@ void printValsToSerial(){
 
 
 
-// Menu function for selecting the components to be tested
-// Follow serial monitor for instrcutions
-
-void oldMenuTesting(){
-    if (menuOption == '1') {
-    
-    adxl.powerOn();                     // Power on the ADXL345
-
-    adxl.setRangeSetting(16);           // Give the range settings
-    // Accepted values are 2g, 4g, 8g or 16g
-    // Higher Values = Wider Measurement Range
-    // Lower Values = Greater Sensitivity
-    adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
-    // display tab-separated accel x/y/z values
-    Serial.print(F("ADXL345 accel-\t"));
-    Serial.print(adxlAx); Serial.print(F("\t"));
-    Serial.print(adxlAy); Serial.print(F("\t"));
-    Serial.println(adxlAz);
-
-  }
-  else if (menuOption == '2') {
-    // Force Sensitive Resistor - Square - Test Code
-    // Read FSR resistance value. try also fsrSquare.getResistance()
-    // For more information see Sparkfun website - www.sparkfun.com/products/9375
-    // Note, the default Vcc and external resistor values for FSR calculations are 5V ang 3300Okm, if you are not
-    //       using these default valuse in your circuit go to FSR.cpp and change default values in FSR constructor
-    double fsrSquareForce = getForceNew(true);
-    Serial.print(F("Force: ")); Serial.print(fsrSquareForce); Serial.println(F(" lbs"));
-
-  }
-  else if (menuOption == '3')
-  {
-    // Disclaimer: The Ublox NEO-6M GPS Module is outdated, we might need to buy the 8M for continued support
-    // for more information visit: https://lastminuteengineers.com/neo6m-gps-arduino-tutorial/
-    //print out 10 readings from the GPS module
-    // returns NMEA sentences which need to be parsed, visit the site above and section "Parsing NMEA Sentences" for more information
-    //TinyGPS++ seems to be a good library for doing this
-    
-  }
 
 
 
-  if (millis() - time0 > timeout)
-  {
-    menuOption = menu();
-  }
-
-}
-
-
-char menu()
-{
-
-  Serial.println(F("\nWhich component would you like to test?"));
-  Serial.println(F("(1) SparkFun ADXL345 - Triple Axis Accelerometer Breakout"));
-  Serial.println(F("(2) Force Sensitive Resistor - Square"));
-  Serial.println(F("(3) Ublox NEO-6M GPS Module"));
-  Serial.println(F("(menu) send anything else or press on board reset button\n"));
-  while (!Serial.available());
-
-  // Read data from serial monitor if received
-  while (Serial.available())
-  {
-    char c = Serial.read();
-    if (isAlphaNumeric(c))
-    {
-
-      if (c == '1')
-        Serial.println(F("Now Testing SparkFun ADXL345 - Triple Axis Accelerometer Breakout"));
-      else if (c == '2')
-        Serial.println(F("Now Testing Force Sensitive Resistor - Square"));
-      else if (c == '3')
-        Serial.println(F("Now Testing Ublox NEO-6M GPS Module"));
-      else
-      {
-        Serial.println(F("illegal input!"));
-        return 0;
-      }
-      time0 = millis();
-      return c;
-    }
-  }
-}
-
-
-void printGPS(){
+void printGPS() {
   while (Serial.available() > 0) {
-      if (gps.encode(Serial.read())) {
-        
-        displayGPSInfo();
-        
+    if (gps.encode(Serial.read())) {
 
-      }
+      displayGPSInfo();
+
+
+
     }
+  }
 }
 
 //configuration for the WiFi
 void configureWifi() {
   WiFi.begin(ssid, password);
-  Serial.println("Connecting");
+  Serial1.println("Connecting");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial1.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: ");
-  Serial.println(WiFi.localIP());
+  Serial1.println("");
+  Serial1.print("Connected to WiFi network with IP Address: ");
+  Serial1.println(WiFi.localIP());
 }
 
+double * getGPSData() {
+  /*returns array consisting of 4 elements 
+  0 = valid?
+  1 = lat
+  2=long
+  3=alt
+
+  */
+  static double data[4];
+  while (1) {
+    while (Serial.available() > 0) {
+      if (gps.encode(Serial.read())) {
+        if (gps.location.isValid()){
+          data[0] = 1;
+          data[1] = gps.location.lat();
+          data[2] = gps.location.lng();
+          data[3] = gps.altitude.meters();
+          return data;
+        }
+        else
+        {
+          
+          for(int i = 0; i<4; i++){
+            data[i] = 0;
+          }
+          return data;
+        }
+      }
+
+    }
+  }
+  return data;
+}
 
 //display interface for GPS readings
+
 void displayGPSInfo()
 {
   if (gps.location.isValid())
@@ -283,8 +244,8 @@ void displayGPSInfo()
 
   Serial1.println();
   Serial1.println();
-  
-  
+
+
 }
 
 
@@ -293,7 +254,7 @@ void displayGPSInfo()
 double getResistance() {
   double res = 10000; //using 10k resistor
   double Vcc = 3.3; //operates at 3.3V
-  
+
   double senVoltage = analogRead(FSRSQUARE_PIN_1) * Vcc / 1023;
   return res * (Vcc / senVoltage - 1);
 }
@@ -301,45 +262,45 @@ double getResistance() {
 /**
    Converte resistance to force using curve from data sheet [in grams]
 */
-double analogToVout(int analogReadValue){
-  
+double analogToVout(int analogReadValue) {
+
   return analogReadValue * vcc / 1023; //convert analog read value parameter to volts, can also use map function
 }
 
-double vOutToResistance(double vOut){
+double vOutToResistance(double vOut) {
   int refResistorVal = 10000; //we are currently using a 10k resistor
   return (refResistorVal * vcc / vOut) - 1;
 }
 
-double resistanceToForce(double resistanceFSR){
+double resistanceToForce(double resistanceFSR) {
   double kOhmResistance = resistanceFSR / 1000; //equation works in kohms
   return 1285.197 * pow(kOhmResistance, -1.41);
 }
 
 
-double getForceNew(bool inPounds){
+double getForceNew(bool inPounds) {
   int analogReadVal = analogRead(FSRSQUARE_PIN_1); // read the FSR pin
   double vOut = analogToVout(analogReadVal); //convert analog read to voltage
   double fsrResistance = vOutToResistance(vOut); //convert read voltage to FSR resistance
   double fsrForce = resistanceToForce(fsrResistance); //get force applied to sensor in grams
-  if (inPounds){
+  if (inPounds) {
     fsrForce = gTolb(fsrForce);
   }
   return fsrForce;
-  
+
 }
 double getForce()
 {
   double resistance = getResistance();
-  
+
   //calculate force using curve broken into two parts of different slope
   if (resistance <= 600)
-    return (1.0 / resistance - 0.00075) / 0.00000032639 / pow(3.81,2);
+    return (1.0 / resistance - 0.00075) / 0.00000032639 / pow(3.81, 2);
   else
-    return (1.0 / resistance)  / 0.000000642857/pow(3.81,2);
+    return (1.0 / resistance)  / 0.000000642857 / pow(3.81, 2);
 }
-double gTolb(double g){
-  return g * 0.00220462; 
+double gTolb(double g) {
+  return g * 0.00220462;
 }
 
 /*******************************************************
@@ -385,3 +346,91 @@ double gTolb(double g){
      ITS LICENSORS AND AFFILIATES FROM, ANY CLAIMS IN CONNECTION WITH ANY OF
      THE ABOVE.
 ********************************************************/
+
+
+
+
+
+// Menu function for selecting the components to be tested
+// Follow serial monitor for instrcutions
+
+void oldMenuTesting() {
+  if (menuOption == '1') {
+
+    adxl.powerOn();                     // Power on the ADXL345
+
+    adxl.setRangeSetting(16);           // Give the range settings
+    // Accepted values are 2g, 4g, 8g or 16g
+    // Higher Values = Wider Measurement Range
+    // Lower Values = Greater Sensitivity
+    adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
+    // display tab-separated accel x/y/z values
+    Serial.print(F("ADXL345 accel-\t"));
+    Serial.print(adxlAx); Serial.print(F("\t"));
+    Serial.print(adxlAy); Serial.print(F("\t"));
+    Serial.println(adxlAz);
+
+  }
+  else if (menuOption == '2') {
+    // Force Sensitive Resistor - Square - Test Code
+    // Read FSR resistance value. try also fsrSquare.getResistance()
+    // For more information see Sparkfun website - www.sparkfun.com/products/9375
+    // Note, the default Vcc and external resistor values for FSR calculations are 5V ang 3300Okm, if you are not
+    //       using these default valuse in your circuit go to FSR.cpp and change default values in FSR constructor
+    double fsrSquareForce = getForceNew(true);
+    Serial.print(F("Force: ")); Serial.print(fsrSquareForce); Serial.println(F(" lbs"));
+
+  }
+  else if (menuOption == '3')
+  {
+    // Disclaimer: The Ublox NEO-6M GPS Module is outdated, we might need to buy the 8M for continued support
+    // for more information visit: https://lastminuteengineers.com/neo6m-gps-arduino-tutorial/
+    //print out 10 readings from the GPS module
+    // returns NMEA sentences which need to be parsed, visit the site above and section "Parsing NMEA Sentences" for more information
+    //TinyGPS++ seems to be a good library for doing this
+
+  }
+
+
+
+  if (millis() - time0 > timeout)
+  {
+    menuOption = menu();
+  }
+
+}
+
+
+char menu()
+{
+
+  Serial.println(F("\nWhich component would you like to test?"));
+  Serial.println(F("(1) SparkFun ADXL345 - Triple Axis Accelerometer Breakout"));
+  Serial.println(F("(2) Force Sensitive Resistor - Square"));
+  Serial.println(F("(3) Ublox NEO-6M GPS Module"));
+  Serial.println(F("(menu) send anything else or press on board reset button\n"));
+  while (!Serial.available());
+
+  // Read data from serial monitor if received
+  while (Serial.available())
+  {
+    char c = Serial.read();
+    if (isAlphaNumeric(c))
+    {
+
+      if (c == '1')
+        Serial.println(F("Now Testing SparkFun ADXL345 - Triple Axis Accelerometer Breakout"));
+      else if (c == '2')
+        Serial.println(F("Now Testing Force Sensitive Resistor - Square"));
+      else if (c == '3')
+        Serial.println(F("Now Testing Ublox NEO-6M GPS Module"));
+      else
+      {
+        Serial.println(F("illegal input!"));
+        return 0;
+      }
+      time0 = millis();
+      return c;
+    }
+  }
+}
