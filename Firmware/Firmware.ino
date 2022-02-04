@@ -6,13 +6,17 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 //#include <WiFiClient.h>
+#include <ArduinoJson.h>
 
 //configuration details for WiFi
 const char* ssid = "NETGEAR56";
 const char* password = "fancypotato115";
 
+const String apiKey = "dev";
+
 //Domain name with URL path or IP address with path
-const char* serverName = "http://18.191.219.252:8080/";
+const String serverName = "http://192.168.1.7:8080/postData";
+//const String serverName = "http://18.191.219.252:8080/";
 
 unsigned long lastTime = 0;
 //how long we wait before timeout
@@ -38,27 +42,27 @@ const int timeout = 2000000;       //define timeout of 10 sec
 char menuOption = 0;
 long time0;
 
-void postForceData(double forceReading, int gpsData[3]) {
+void postSystemData(String jsonString) {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
     HTTPClient http;
 
     // Your Domain name with URL path or IP address with path
-    http.begin(client, (serverName));
+    http.begin(client, (serverName + "?key=" + apiKey));
 
 
     // Specify content-type header
     http.addHeader("Content-Type", "application/json");
     // Data to send with HTTP POST
-    int httpResponseCode = http.POST("{\"api_key\":\"dev\",\force_data\":\"" + String(forceReading) + "\"}");
+    int httpResponseCode = http.POST(jsonString);
 
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
+    Serial1.print("HTTP Response code: ");
+    Serial1.println(httpResponseCode);
 
     // Free resources
     http.end();
   } else {
-    Serial.println("WiFi has been disconnected");
+    Serial1.println("WiFi has been disconnected");
   }
 
 }
@@ -105,7 +109,30 @@ void loop()
 }
 
 void postData(){
-  Serial1.println(getGPSData()[0]);
+  StaticJsonDocument<300> doc;
+  int analogReadVal = analogRead(FSRSQUARE_PIN_1); // read the FSR pin
+  double vOut = analogToVout(analogReadVal); //convert analog read to voltage
+  double fsrResistance = vOutToResistance(vOut); //convert read voltage to FSR resistance
+  doc.add(fsrResistance);
+
+  double *gpsData = getGPSData();
+  doc.add(gpsData[0]);
+  doc.add(gpsData[1]);
+  doc.add(gpsData[2]);
+  doc.add(gpsData[3]);
+
+  adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
+  doc.add(adxlAx);
+  doc.add(adxlAy);
+  doc.add(adxlAz);
+  
+
+  String output;
+  serializeJson(doc, output);
+  postSystemData(output);
+  
+  
+  
 }
 
 
