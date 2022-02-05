@@ -9,6 +9,7 @@
 #include <ArduinoJson.h>
 #include<WiFiClientSecure.h>
 #include <WiFiUdp.h>
+#include <NTPClient.h>
 
 //configuration details for WiFi
 const char* ssid = "WIFI NAME";
@@ -166,7 +167,7 @@ void printValsToSerial() {
   //print force square value
   double fsrSquareForce = getForceNew(true);
   Serial1.print(F("Force: ")); Serial1.print(fsrSquareForce); Serial1.println(F(" lbs"));
-
+  int adxlAx, adxlAy, adxlAz;
   //print accelerometer values
   adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
   // display tab-separated accel x/y/z values
@@ -413,6 +414,7 @@ void oldMenuTesting() {
     // Accepted values are 2g, 4g, 8g or 16g
     // Higher Values = Wider Measurement Range
     // Lower Values = Greater Sensitivity
+    int adxlAx, adxlAy, adxlAz;
     adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
     // display tab-separated accel x/y/z values
     Serial.print(F("ADXL345 accel-\t"));
