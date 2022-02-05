@@ -7,10 +7,15 @@
 #include <ESP8266HTTPClient.h>
 //#include <WiFiClient.h>
 #include <ArduinoJson.h>
+#include<WiFiClientSecure.h>
 
 //configuration details for WiFi
-const char* ssid = "NETGEAR56";
-const char* password = "fancypotato115";
+const char* ssid = "WIFI NAME";
+const char* password = "WIFI PASSWORD";
+
+const String firebaseAPIKey = "AIzaSyD3-yBGhRrFQZhDM-1VE3vou5nDvO83Crw";
+const String firebaseID = "contaxt-bc929";
+const char fingerprint[] PROGMEM  = "D7 01 00 B5 C3 A7 F2 0D C7 4F C4 39 80 16 DD 58 4E E9 62 86";
 
 const String apiKey = "dev";
 
@@ -30,7 +35,7 @@ const double vcc = 3.3;
 
 
 // Global variables and defines
-int adxlAx, adxlAy, adxlAz;
+
 
 
 // object initialization
@@ -44,20 +49,23 @@ long time0;
 
 void postSystemData(String jsonString) {
   if (WiFi.status() == WL_CONNECTED) {
-    WiFiClient client;
+    WiFiClientSecure client;
+    client.setFingerprint(fingerprint);
+    
     HTTPClient http;
-
+    String url = "https://firestore.googleapis.com/v1/projects/" + firebaseID + "/databases/(default)/documents/hardware/deviceReadings/" + WiFi.macAddress() + "?key=" + firebaseAPIKey;
     // Your Domain name with URL path or IP address with path
-    http.begin(client, (serverName + "?key=" + apiKey));
+    http.begin(client, url);
 
 
     // Specify content-type header
     http.addHeader("Content-Type", "application/json");
     // Data to send with HTTP POST
-    int httpResponseCode = http.POST(jsonString);
+    Serial1.print("HTTP Response: ");
+    Serial1.println(http.POST(jsonString));
 
-    Serial1.print("HTTP Response code: ");
-    Serial1.println(httpResponseCode);
+
+
 
     // Free resources
     http.end();
@@ -104,35 +112,43 @@ void setup()
 void loop()
 {
   postData();
-  
+  while (1);
+
 
 }
 
-void postData(){
-  StaticJsonDocument<300> doc;
+void postData() {
+  StaticJsonDocument<512> doc;
+
+  JsonObject fields = doc.createNestedObject("fields");
+
+  int adxlAx, adxlAy, adxlAz;
+  adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
+  JsonObject fields_accelerometer_mapValue_fields = fields["accelerometer"]["mapValue"].createNestedObject("fields");
+  fields_accelerometer_mapValue_fields["z"]["integerValue"] = adxlAz;
+  fields_accelerometer_mapValue_fields["x"]["integerValue"] = adxlAx;
+  fields_accelerometer_mapValue_fields["y"]["integerValue"] = adxlAy;
+
+  double *gpsData = getGPSData();
+  JsonObject fields_gps_mapValue_fields = fields["gps"]["mapValue"].createNestedObject("fields");
+  fields_gps_mapValue_fields["valid"]["integerValue"] = gpsData[0];
+  fields_gps_mapValue_fields["longitude"]["doubleValue"] = gpsData[1];
+  fields_gps_mapValue_fields["latitude"]["doubleValue"] = gpsData[2];
+  fields_gps_mapValue_fields["altitude"]["doubleValue"] = gpsData[3];
+
+
   int analogReadVal = analogRead(FSRSQUARE_PIN_1); // read the FSR pin
   double vOut = analogToVout(analogReadVal); //convert analog read to voltage
   double fsrResistance = vOutToResistance(vOut); //convert read voltage to FSR resistance
-  doc.add(fsrResistance);
+  fields["force"]["doubleValue"] = fsrResistance;
 
-  double *gpsData = getGPSData();
-  doc.add(gpsData[0]);
-  doc.add(gpsData[1]);
-  doc.add(gpsData[2]);
-  doc.add(gpsData[3]);
-
-  adxl.readAccel(&adxlAx, &adxlAy, &adxlAz);
-  doc.add(adxlAx);
-  doc.add(adxlAy);
-  doc.add(adxlAz);
-  
 
   String output;
   serializeJson(doc, output);
   postSystemData(output);
-  
-  
-  
+
+
+
 }
 
 
@@ -184,18 +200,18 @@ void configureWifi() {
 }
 
 double * getGPSData() {
-  /*returns array consisting of 4 elements 
-  0 = valid?
-  1 = lat
-  2=long
-  3=alt
+  /*returns array consisting of 4 elements
+    0 = valid?
+    1 = lat
+    2=long
+    3=alt
 
   */
   static double data[4];
   while (1) {
     while (Serial.available() > 0) {
       if (gps.encode(Serial.read())) {
-        if (gps.location.isValid()){
+        if (gps.location.isValid()) {
           data[0] = 1;
           data[1] = gps.location.lat();
           data[2] = gps.location.lng();
@@ -204,8 +220,8 @@ double * getGPSData() {
         }
         else
         {
-          
-          for(int i = 0; i<4; i++){
+
+          for (int i = 0; i < 4; i++) {
             data[i] = 0;
           }
           return data;
