@@ -148,6 +148,8 @@ void postData() {
   double vOut = analogToVout(analogReadVal); //convert analog read to voltage
   double fsrResistance = vOutToResistance(vOut); //convert read voltage to FSR resistance
   fields["force"]["doubleValue"] = fsrResistance;
+
+  //SHOULD ADD AN RTC TO GET ACCURATE TIME
   fields["timestamp"]["timestampValue"] = timeClient.getFormattedTime();
 
 
