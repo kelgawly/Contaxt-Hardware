@@ -8,6 +8,7 @@
 //#include <WiFiClient.h>
 #include <ArduinoJson.h>
 #include<WiFiClientSecure.h>
+#include <WiFiUdp.h>
 
 //configuration details for WiFi
 const char* ssid = "WIFI NAME";
@@ -33,8 +34,10 @@ unsigned long timerDelay = 5000;
 //operating at 3.3 V
 const double vcc = 3.3;
 
+const long utcOffsetInSeconds = 3600;
 
-// Global variables and defines
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 
 
@@ -51,7 +54,7 @@ void postSystemData(String jsonString) {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClientSecure client;
     client.setFingerprint(fingerprint);
-    
+
     HTTPClient http;
     String url = "https://firestore.googleapis.com/v1/projects/" + firebaseID + "/databases/(default)/documents/hardware/deviceReadings/" + WiFi.macAddress() + "?key=" + firebaseAPIKey;
     // Your Domain name with URL path or IP address with path
@@ -95,7 +98,8 @@ void setup()
   //connect to wifi
   configureWifi();
 
-
+  timeClient.begin();
+  
   //ADXL345 additional info ->  https://github.com/sparkfun/SparkFun_ADXL345_Arduino_Library/blob/master/examples/SparkFun_ADXL345_Example/SparkFun_ADXL345_Example.ino
   //create accelerometer object
   ADXL345 adxl = ADXL345();
@@ -118,6 +122,8 @@ void loop()
 }
 
 void postData() {
+  timeClient.update();
+
   StaticJsonDocument<512> doc;
 
   JsonObject fields = doc.createNestedObject("fields");
@@ -141,6 +147,7 @@ void postData() {
   double vOut = analogToVout(analogReadVal); //convert analog read to voltage
   double fsrResistance = vOutToResistance(vOut); //convert read voltage to FSR resistance
   fields["force"]["doubleValue"] = fsrResistance;
+  fields["timestamp"]["timestampValue"] = timeClient.getFormattedTime();
 
 
   String output;
